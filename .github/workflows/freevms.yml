@@ -1,0 +1,100 @@
+name: freevms
+
+env:
+  FOO: bar
+
+# Controls when the action will run.
+on:
+  # push:
+  #   branches: [ "main" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_call:
+
+  workflow_dispatch:
+    inputs:
+      windows-vm:
+        type: boolean
+        default: true
+      macos-vm:
+        type: boolean
+        default: true
+      ubuntu-vm:
+        type: boolean
+        default: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  ubuntu:
+    if: ${{ inputs.ubuntu-vm }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-x86_64
+            os: ubuntu-22.04
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-artifact
+        path: artifact/
+        
+  windows:
+    if: ${{ inputs.windows-vm}}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: win64
+            os: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    
+    - uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-artifact
+        path: artifact/
+
+  macos:
+    if: ${{ inputs.macos-vm }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x64
+            os: macos-12
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      
+    - name: Upload Faust artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-artifact
+        path: artifact/
